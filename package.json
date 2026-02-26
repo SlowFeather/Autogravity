@@ -2,7 +2,7 @@
     "name": "autogravity",
     "displayName": "Autogravity",
     "description": "Autogravity Automation Plugin for Antigravity",
-    "version": "0.0.1",
+    "version": "0.0.3",
     "publisher": "autogravity",
     "repository": {
         "type": "git",

@@ -79,8 +79,52 @@ export class CDPManager {
 
         if (this.isPolling) {
             const code = `
+                if (!document.getElementById('autogravity-dot')) {
+                    const dot = document.createElement('div');
+                    dot.id = 'autogravity-dot';
+                    Object.assign(dot.style, {
+                        position: 'fixed',
+                        bottom: '25px',
+                        left: '50%',
+                        transform: 'translateX(-50%)',
+                        width: '14px',
+                        height: '14px',
+                        backgroundColor: '#FF7EB3',
+                        borderRadius: '50%',
+                        zIndex: '999999',
+                        boxShadow: '0 0 12px rgba(255, 126, 179, 0.9)',
+                        pointerEvents: 'none'
+                    });
+                    document.body.appendChild(dot);
+                    
+                    const style = document.createElement('style');
+                    style.id = 'autogravity-style';
+                    style.innerHTML = \`
+                        @keyframes autogravityBlinkBounce {
+                            0% { transform: translateX(-50%) scale(1); }
+                            15% { transform: translateX(-50%) scaleX(1.5) scaleY(0.1); }
+                            40% { transform: translateX(-50%) scaleX(0.7) scaleY(1.4); }
+                            65% { transform: translateX(-50%) scaleX(1.1) scaleY(0.9); }
+                            85% { transform: translateX(-50%) scaleX(0.95) scaleY(1.05); }
+                            100% { transform: translateX(-50%) scale(1); }
+                        }
+                        .autogravity-animate {
+                            animation: autogravityBlinkBounce 0.5s cubic-bezier(0.25, 1, 0.5, 1) !important;
+                        }
+                    \`;
+                    document.head.appendChild(style);
+                }
+
                 if (!window.__autogravityTimer) {
                     window.__autogravityTimer = setInterval(() => {
+                        const triggerAnimation = () => {
+                            const dot = document.getElementById('autogravity-dot');
+                            if (dot) {
+                                dot.classList.remove('autogravity-animate');
+                                void dot.offsetWidth;
+                                dot.classList.add('autogravity-animate');
+                            }
+                        };
                         const selectors = ['button', 'div[role="button"]', 'a[role="button"]', '.monaco-button'];
                         const clickAccept = (doc) => {
                             if (!doc) return false;
@@ -99,6 +143,7 @@ export class CDPManager {
                                     if (firstRow && typeof firstRow.click === 'function') {
                                         firstRow.click();
                                         console.log('[Autogravity] Auto-clicked next edited file in quick pick list.');
+                                        triggerAnimation();
                                         return true; // 点完了就中断当次扫描
                                     }
                                 }
@@ -193,6 +238,7 @@ export class CDPManager {
                             if (acceptBtn && typeof acceptBtn.click === 'function') {
                                 acceptBtn.click();
                                 console.log('[Autogravity] Auto-clicked button:', acceptBtn.textContent || acceptBtn.getAttribute('title') || 'Icon Button');
+                                triggerAnimation();
                                 return true;
                             }
                             return false;
@@ -222,6 +268,10 @@ export class CDPManager {
                 }
                 const oldBtn = document.getElementById('autogravity-btn');
                 if (oldBtn) oldBtn.remove();
+                const dot = document.getElementById('autogravity-dot');
+                if (dot) dot.remove();
+                const style = document.getElementById('autogravity-style');
+                if (style) style.remove();
             `;
             await this.evaluateAll(code);
             vscode.window.showInformationMessage('Autogravity: Auto-Accept 已停止！');
