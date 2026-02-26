@@ -10,9 +10,9 @@ export class CDPManager {
     public async connect(): Promise<boolean> {
         try {
             const targets = await this.getTargets();
-            // 过滤出所有有 WebSocket 调试地址的页面或 Webview
+            // 过滤出所有有 WebSocket 调试地址的页面或 Webview 或 iframe
             const validTargets = targets.filter(t =>
-                (t.type === 'page' || t.type === 'webview') && t.webSocketDebuggerUrl
+                (t.type === 'page' || t.type === 'webview' || t.type === 'iframe') && t.webSocketDebuggerUrl
             );
 
             if (validTargets.length === 0) {
@@ -81,7 +81,7 @@ export class CDPManager {
             const code = `
                 if (!window.__autogravityTimer) {
                     window.__autogravityTimer = setInterval(() => {
-                        const selectors = ['button', 'div[role="button"]', 'a[role="button"]', '.monaco-button', 'vscode-button'];
+                        const selectors = ['button', 'div[role="button"]', 'a[role="button"]', '.monaco-button', 'vscode-button', '.monaco-text-button', '.chat-tool-button'];
                         const clickAccept = (doc) => {
                             if (!doc) return false;
                             
@@ -145,10 +145,18 @@ export class CDPManager {
                             const includeRules = [
                                 (btn, text) => {
                                     const t = text.trim();
-                                    if (t === 'accept' || t === 'accept all' || t === 'accept changes' || t === 'run' || t === 'always allow') return true;
+                                    
+                                    // 精准匹配 Run command 中的 Run 按钮
+                                    // 检查是否是主按钮（primary）且文字是 Run，通常确认为执行命令
+                                    const isPrimary = typeof btn.className === 'string' && btn.className.includes('primary');
+                                    if (isPrimary && (t === 'run' || t === 'accept' || t === 'yes' || t === 'continue')) {
+                                        return true;
+                                    }
+
+                                    if (t === 'accept' || t === 'accept all' || t === 'accept changes' || t === 'run' || t === 'always allow' || t === 'approve' || t === 'continue' || t === 'yes' || t === 'allow this conversation') return true;
                                     // 只要是以 accept 或 run 开头，且长度不算太长（排除普通长文本聊天），基本都是我们需要的动作按钮
                                     // 这样可以包含 "Accept Alt+O", "Accept all" 以及没有空格的 "AcceptAlt+O"
-                                    if ((t.startsWith('accept') || t.startsWith('run')) && t.length < 45) return true;
+                                    if ((t.startsWith('accept') || t.startsWith('run') || t.startsWith('approve') || t.startsWith('allow')) && t.length < 45) return true;
                                     
                                     // 专门处理 Run command 的确认按钮：Run Alt+Enter 或含有特定关键字
                                     // 无论 class 里是否包含 monaco-button (兼顾 webview 中的 vscode-button)
@@ -189,8 +197,18 @@ export class CDPManager {
                                 // 然后判断是否符合命中名单
                                 return includeRules.some(rule => rule(b, text));
                             });
-                            if (acceptBtn && typeof acceptBtn.click === 'function') {
-                                acceptBtn.click();
+
+                            if (acceptBtn) {
+                                // 更加鲁棒的点击触发（有的原生按钮不响应简单的 click()）
+                                if (typeof acceptBtn.focus === 'function') {
+                                    try { acceptBtn.focus(); } catch(e) {}
+                                }
+                                ['mousedown', 'mouseup', 'click'].forEach(evt => {
+                                    try { acceptBtn.dispatchEvent(new MouseEvent(evt, { bubbles: true, cancelable: true, view: window })); } catch(e) {}
+                                });
+                                if (typeof acceptBtn.click === 'function') {
+                                    try { acceptBtn.click(); } catch(e) {}
+                                }
                                 console.log('[Autogravity] Auto-clicked button:', acceptBtn.textContent || acceptBtn.getAttribute('title') || 'Icon Button');
                                 return true;
                             }

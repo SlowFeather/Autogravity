@@ -9,3 +9,4 @@ out/
 !package-lock.json
 !tsconfig.json
 !output.json
+test_env/
