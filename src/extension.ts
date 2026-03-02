@@ -1,5 +1,5 @@
 import * as vscode from 'vscode';
-import { CDPManager } from './cdp';
+import { CDPManager } from './cdp-manager';
 
 let cdpManager: CDPManager | undefined;
 let statusBarItem: vscode.StatusBarItem;
