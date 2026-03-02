@@ -97,6 +97,22 @@ export class CDPManager {
                     }
                 }
 
+                // ========== 辅助函数：判断元素是否在 Diff 工具栏 / 编辑器标题栏中 ==========
+                // Diff 工具栏虽然是 monaco-editor 的子元素，但不应被排除
+                function isInDiffToolbar(el) {
+                    let node = el;
+                    for (let i = 0; i < 10 && node; i++) {
+                        const cls = typeof node.className === 'string' ? node.className : '';
+                        if (cls.includes('diff-editor') && cls.includes('toolbar')) return true;
+                        if (cls.includes('diff-review')) return true;
+                        if (cls.includes('editor-actions')) return true;
+                        if (cls.includes('title-actions')) return true;
+                        if (cls.includes('action-bar')) return true;
+                        node = node.parentElement;
+                    }
+                    return false;
+                }
+
                 const elements = Array.from(document.querySelectorAll(selectors.join(',')));
 
                 // 定义排除规则
@@ -118,7 +134,8 @@ export class CDPManager {
                     },
                     // 3. 排除聊天消息框或外层容器引发的误触
                     (btn, text) => {
-                        if (text.length > 40) return true;
+                        // 带快捷键后缀如 "Accept Changes Ctrl+↵" 可能较长，放宽到 80
+                        if (text.length > 80) return true;
                         if (typeof btn.className === 'string' &&
                            (btn.className.includes('monaco-list-row') || btn.className.includes('chat-row'))) {
                             return true;
@@ -172,7 +189,10 @@ export class CDPManager {
                         return false;
                     },
                     // 8. 排除代码编辑器内部的元素（源码中的 run/accept 等关键字不应被点击）
+                    //    但 Diff 工具栏中的按钮不应被排除（它们也是 monaco-editor 的子元素）
                     (btn, text) => {
+                        // 先判断是否在 Diff 工具栏 / editor-actions 中，如果是则不排除
+                        if (isInDiffToolbar(btn)) return false;
                         let curr = btn;
                         for (let i = 0; i < 20 && curr; i++) {
                             const cls = typeof curr.className === 'string' ? curr.className : '';
@@ -195,7 +215,8 @@ export class CDPManager {
                             return true;
                         }
                         if (t === 'accept' || t === 'accept all' || t === 'accept changes' || t === 'run' || t === 'always allow' || t === 'approve' || t === 'continue' || t === 'yes' || t === 'allow this conversation' || t === 'resume' || t === 'retry' || t === 'proceed') return true;
-                        if ((t.startsWith('accept') || t.startsWith('approve') || t.startsWith('allow') || t.startsWith('resume') || t.startsWith('proceed')) && t.length < 45) return true;
+                        // 兼容带快捷键后缀的按钮文本，如 "accept changes ctrl+↵" 或 "accept all alt+enter"
+                        if ((t.startsWith('accept') || t.startsWith('approve') || t.startsWith('allow') || t.startsWith('resume') || t.startsWith('proceed')) && t.length < 80) return true;
                         if (t.includes('run') && (t.includes('alt+') || t.includes('↵') || t.includes('enter') || t.includes('cmd+') || t.includes('ctrl+'))) {
                             return true;
                         }
@@ -208,7 +229,8 @@ export class CDPManager {
                                (btn.className.includes('monaco-button') && (text.includes('accept') || text.includes('accept all'))) ||
                                (btn.className.includes('center-button') && (text.includes('edited file') || text.includes('accept all')));
                     },
-                    (btn, text) => /view \\d+ edited file/.test(text),
+                    // "View X edited file(s)" 按钮（兼容单复数）
+                    (btn, text) => /view \d+ edited file/.test(text),
                     (btn, text) => {
                         const isCheckIcon = btn.classList.contains('codicon-check') ||
                                            btn.querySelector('.codicon-check') !== null;
