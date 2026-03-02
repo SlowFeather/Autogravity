@@ -1,28 +1,29 @@
 # Autogravity 自动化增强插件
 
-**Autogravity** 是一款专为 **Antigravity**（基于 VSCode 深度定制的 AI 智能编程助手）打造的高效自动化增强插件。本插件通过 Chrome DevTools Protocol (CDP) 穿透 VSCode 的安全沙箱，提供全链路的 UI 自动化能力，致力于提升研发人员与 AI 协同工作时的流畅度与“无人值守”效率。
+**Autogravity** 是一款专为 **Antigravity**（基于 VSCode 深度定制的 AI 智能编程助手）打造的高效辅助插件。通过底层的 Chrome DevTools Protocol (CDP) 穿透 VSCode 的安全沙箱，提供全链路的 UI 外挂级自动化能力，致力于消灭研发人员与 AI 协同工作时“繁琐的按键接力”，实现真正的“无人值守”。
 
 ## 🌟 核心特性 (Features)
 
-### 1. 🤖 极致的全能自动确流 (Smart UI Automation)
-借助强大的底层 DOM 扫描规则集与 **Node 端后台定时轮询机制 (Polling)**，释放您的双手，使复杂长线的 Agent 任务永不阻塞：
-- **全局动作自动执行**：智能捕获界面的 `Accept`, `Run`, `Accept all`, `Always allow` 等按键。
-- **底层 CDP 级精准点击**：通过底层的 `Input.dispatchMouseEvent` 与 `Runtime.evaluate` 处理复杂视图下的点击操作（包括原生不响应简单 `click()` 方法的框架级按钮或复杂嵌套的 `iframe` 视图）。
-- **Diff 与文件操作**：精准定位修改对比视图（Diff）的 `Accept Changes` 按钮，以及在边侧栏中单行文件修改旁边的行内 `Accept` 小钩子（Codicon）。
-- **多文件批量审批循环处理**：全自动识别并点击 `View X edited files` 进入验收列表，接着智能点选 `Search for files edited by Agent` 的 Quick Pick 候选行，直接形成无人值守的验证闭环。
-- **智能化防误触机制与彻底回收**：拥有完善的屏蔽机制，主动排除纯文本消息框、聊天气泡结构以及用户运行的后台特定日志块，规避无意义或破坏性的交互。并在停用或切换窗口时彻底回收清理所有相关的轮询定时器，杜绝内存泄漏卡顿。
+### 1. 🤖 极致全能的自动确流 (Smart UI Automation)
+基于独立解耦的高精度 DOM 扫描规则集与 **Node 端后台安全轮询引擎**，彻底释放您的双手：
+- **全局动作自动执行**：智能捕获界面的 `Accept`, `Run`, `Accept all`, `Always allow` 等核心按键。
+- **底层 CDP 仿真点击**：放弃容易被现代前端框架拦截的原生 `element.click()`，直接向系统抛入最底层的 `Input.dispatchMouseEvent` 物理仿真鼠标事件。并配有 JavaScript 派发回退策略，确保任何深层嵌套（如 `iframe`）内的按钮都被真实触发。
+- **深度 Diff 视图审阅闭环**：不仅支持侧边小钩子（Codicon）和普通的 `Accept Changes`，现已全面攻克悬浮工具栏！完美支持 `diff-review` 底部浮层、内联 `peek-view`、`zone-widget` 等高阶组件内的带快捷键操作，自动识别点击 `< Edited files 1/10 >` 及 `Next Change` 导航箭头，形成无缝多文件连跳。
+- **智能防误触防御塔**：配备了高达十余项的细化屏蔽规则。严密隔离源码编辑区 (`monaco-editor`)、纯文本消息框、聊天气泡结构以及终端日志打印等区域，确保任何无意义点击操作被彻底拦截。
 
-### 2. 📱 跨端远程控制 (Remote Control Server) *(规划中 / 暂未开放)*
-- 插件在启动激活时，将自动在后台拉起轻量级 Web 服务器。
-- 提供控制面板，支持通过手机或局域网内的其它终端设备访问，查阅进度或进行任务控制的切换。
+### 2. 🧩 现代化的解耦架构 (Modular Architecture)
+- 彻底摒弃了传统的单一上帝类设计，拆分为极为清爽的 `Connection` (连接维持), `Scanner` (调度与点击), `Rules` (特征库) 子模块。提供高可维护性的拦截与放行微内核，保证长线开发的稳定迭代。
+
+### 3. 📱 跨端远程控制 (Remote Control Server) *(规划中 / 暂未开放)*
+- 插件在启动激活时，将自动在后台拉起轻量级 Web 服务器，后续支持通过局域网内的手机终端访问查阅进度。
 
 ## 🎯 业务价值 (Value)
-在传统模式下，通过 AI Agent 大幅改动结构化项目或多步分析时，往往容易处于等待人工点击干预的阻塞状态。借助 Autogravity，开发者不再需要“陪坐”与时刻守在电脑前。插件细颗粒度的 UI 自动化闭环确认逻辑，可帮助您更加专注于核心业务架构设计开发，将碎片化的点击流程彻底外包给机器。
+在依靠 AI Agent 处理跨多文件的复杂重构作业时，开发者经常被迫卡在“等待下一步点击”的阻塞态中。借助 Autogravity，你彻底告别了“陪聊”和“陪坐”。只需按下一个开关，成百上千次的比对合并与动作确认将由机器连贯般自动代劳，帮您把精力重新聚焦于上层业务架构层面的深度思考设计中。
 
 ## 🛠️ 安装与使用
-1. 请确保您的 VSCode 或衍生启动器带有开启了远程调试端口的参数，如：`--remote-debugging-port=9222`。
-2. 安装 `.vsix` 扩展包并在界面右下角找到 Status Bar Item （或命令面板调用 `Toggle Auto Accept`）。
-3. 随时通过原生状态栏启停监听，即可享受顺畅无阻的全自动化之旅。
+1. 请确保您的 VSCode 或衍生启动器开启了底层远程调试端口（添加启动参数如：`--remote-debugging-port=9222`）。
+2. 安装项目编译输出的 `.vsix` 扩展包，您会在编辑器右下角发现专属的 Status Bar Item（也可以呼出命令面板输入 `Toggle Auto Accept`）。
+3. 一键切换开关开启引擎，指示器变红即代表自动化引擎已开始为您代理视觉搜寻工作。
 
 ## 📖 文档指南 (Documentation)
-查阅 [DDD 领域驱动设计文档](./DDD.md) 了解插件的系统架构与底层设计演进。
+查阅 [DDD 领域驱动设计文档](./DDD.md) 了解插件详细的系统子域边界与底层核心组件演进方向。
