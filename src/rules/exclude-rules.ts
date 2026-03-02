@@ -5,17 +5,36 @@
  * 在页面上下文中执行，返回 true 表示该元素应被排除（不点击）
  */
 
-/** 辅助函数：判断元素是否在 Diff 工具栏 / 编辑器标题栏中 */
+/** 辅助函数：判断元素是否在 Diff 工具栏 / 编辑器标题栏 / Diff 审阅浮层中 */
 export const IS_IN_DIFF_TOOLBAR_FN = `
     function isInDiffToolbar(el) {
         let node = el;
-        for (let i = 0; i < 10 && node; i++) {
+        for (let i = 0; i < 20 && node; i++) {
             const cls = typeof node.className === 'string' ? node.className : '';
+            const tag = (node.tagName || '').toLowerCase();
+            // Diff 编辑器工具栏
             if (cls.includes('diff-editor') && cls.includes('toolbar')) return true;
+            // Diff 审阅 widget（底部浮层：Accept Changes / Edited files 导航）
             if (cls.includes('diff-review')) return true;
+            if (cls.includes('dirty-diff')) return true;
+            if (cls.includes('review-widget')) return true;
+            // Peek 视图（内联审阅弹窗）
+            if (cls.includes('peek-view')) return true;
+            if (cls.includes('zone-widget')) return true;
+            // 编辑器顶部/底部操作栏
             if (cls.includes('editor-actions')) return true;
             if (cls.includes('title-actions')) return true;
             if (cls.includes('action-bar')) return true;
+            // Monaco 浮层 widget（overlay-widget 用于悬浮工具栏）
+            if (cls.includes('overlay-widget')) return true;
+            if (cls.includes('overlayWidgets')) return true;
+            // 内联修改装饰器区域
+            if (cls.includes('inline-modified')) return true;
+            if (cls.includes('inline-deleted')) return true;
+            // Diff 导航控制栏（< Edited files 1/10 >）
+            if (cls.includes('diff-nav') || cls.includes('navigation')) return true;
+            // 通用匹配：class 中同时含 diff 和 button/action 关键字
+            if (cls.includes('diff') && (cls.includes('button') || cls.includes('action') || cls.includes('widget'))) return true;
             node = node.parentElement;
         }
         return false;
